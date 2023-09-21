@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace URL_Shortener_Server.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20230909220742_InititalCreate")]
-    partial class InititalCreate
+    [Migration("20230921171547_InitialCreateTables")]
+    partial class InitialCreateTables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -53,17 +53,17 @@ namespace URL_Shortener_Server.Migrations
 
             modelBuilder.Entity("URL_Shortener_Server.Models.User", b =>
                 {
-                    b.Property<int?>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int?>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Discriminator")
+                    b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Password")
+                    b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -74,21 +74,6 @@ namespace URL_Shortener_Server.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("User");
-
-                    b.UseTphMappingStrategy();
-                });
-
-            modelBuilder.Entity("URL_Shortener_Server.Models.Admin", b =>
-                {
-                    b.HasBaseType("URL_Shortener_Server.Models.User");
-
-                    b.Property<string>("AdminRole")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasDiscriminator().HasValue("Admin");
                 });
 #pragma warning restore 612, 618
         }

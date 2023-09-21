@@ -2,112 +2,57 @@
 using URL_Shortener_Server.Interfaces;
 using URL_Shortener_Server.Models;
 
-[Route("api/[controller]")]
-[ApiController]
-public class AuthController : Controller
+namespace URL_Shortener_Server.Controllers
 {
-    private readonly IUserRepository _userRepository;
-    private readonly IAdminRepository _adminRepository;
-
-    public AuthController(IUserRepository userRepository, IAdminRepository adminRepository)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
     {
-        _userRepository = userRepository;
-        _adminRepository = adminRepository;
-    }
-    [HttpPost("user/login")]
-    public IActionResult UserLogin([FromBody] User model)
-    {
-        if (!ModelState.IsValid)
+        private readonly IUserRepository _userRepository;
+
+        public AuthController(IUserRepository userRepository)
         {
-            return BadRequest(ModelState); // Повертаємо помилки валідації, якщо дані некоректні
+            _userRepository = userRepository;
         }
 
-        // Далі виконуємо логіку авторизації користувача
-        User user = _userRepository.GetUserByUsername(model.Username);
-
-        if (user != null && user.Password == model.Password)
+        [HttpPost("register")]
+        public IActionResult Register([FromBody] User user)
         {
-            return Ok(new { message = "Успішно ввійшли", user });
-        }
-        else
-        {
-            return Ok(new { success = false, message = "Неправильний логін або пароль" });
-        }
-    }
+            if (string.IsNullOrWhiteSpace(user.Username) || string.IsNullOrWhiteSpace(user.Password))
+            {
+                return BadRequest("Невірні дані користувача.");
+            }
 
+            var existingUser = _userRepository.GetUserByUsername(user.Username);
+            if (existingUser != null)
+            {
+                return Conflict("Користувач з таким іменем вже існує.");
+            }
 
+            _userRepository.AddUser(user);
 
-    [HttpGet("admin/login")]
-    public IActionResult AdminLogin()
-    {
-        return View();
-    }
-
-    // Обробка POST-запиту для логіну адміністратора
-    [HttpPost("admin/login")]
-    public IActionResult AdminLogin(string username, string password)
-    {
-        // Перевірка адміністратора в базі даних
-        Admin admin = _adminRepository.GetAdminByUsername(username);
-
-        if (admin != null && admin.Password == password)
-        {
-            // Успішний логін адміністратора - додайте код для авторизації адміністратора
-
-            return RedirectToAction("AdminDashboard", "Admin");
-        }
-        else
-        {
-            // Невдалий логін - повідомлення про помилку
-            ViewBag.ErrorMessage = "Неправильний логін або пароль";
-            return View();
-        }
-    }
-    [HttpPost("user/register")]
-    public IActionResult UserRegister(string username, string password)
-    {
-        // Перевірка, чи користувач з таким іменем існує вже в базі даних
-        if (_userRepository.GetUserByUsername(username) != null)
-        {
-            ModelState.AddModelError("", "user already exists");
-            return StatusCode(422, ModelState);
+            return Ok("Користувач зареєстрований успішно.");
         }
 
-        // Створення нового користувача і збереження його в базі даних
-        User newUser = new User
+        [HttpPost("login")]
+        public IActionResult UserLogin([FromBody] User model)
         {
-            Username = username,
-            Password = password
-        };
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-        _userRepository.AddUser(newUser);
+            User user = _userRepository.GetUserByUsername(model.Username);
 
-        // Додайте код для авторизації нового користувача
-        return Ok(newUser);
-
-    }
-
-    [HttpPost("admin/register")]
-    public IActionResult AdminRegister(string username, string password)
-    {
-        // Перевірка, чи адміністратор з таким іменем існує вже в базі даних
-        if (_adminRepository.GetAdminByUsername(username) != null)
-        {
-            ViewBag.ErrorMessage = "Адміністратор з таким іменем вже існує";
-            return View();
+            if (user != null && user.Password == model.Password)
+            {
+                return Ok(new { message = "Успішно ввійшли", user });
+            }
+            else
+            {
+                return BadRequest("Неправильний логін або пароль");
+            }
         }
 
-        // Створення нового адміністратора і збереження його в базі даних
-        Admin newAdmin = new Admin
-        {
-            Username = username,
-            Password = password
-        };
-
-        _adminRepository.AddAdmin(newAdmin);
-
-        // Додайте код для авторизації нового адміністратора
-
-        return RedirectToAction("AdminDashboard", "Admin");
     }
 }
